@@ -4,7 +4,7 @@ You can access the demo project from here: [https://stage.alexnet.co/loop/](http
 
 I've used Metabox for creating an 'event' post type and the custom fields.
 
-For the plugin to work, an 'events' post type should be created, and `id`, `about`, `email`, `organizer`, `timestamp`, `address`, `latitude`, `longitude`, and `tags` custom fields should be created and attached to it. 
+For the plugin to work, an 'event' post type should be created, and `id`, `about`, `email`, `organizer`, `timestamp`, `address`, `latitude`, `longitude`, and `tags` custom fields should be created and attached to it. 
 
 After the initial setup, here are the steps to use it:
 
