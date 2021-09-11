@@ -132,10 +132,6 @@
     }
 
     /**
-     * Santize functions
-     */
-
-    /**
      * Validate and santiize the uploaded import files.
      * 
      */
