@@ -10,7 +10,7 @@
 
     define( 'LOOP_RECIPIENT', 'logging@agentur-loop.com' );
 
-    // Set up actions for the Events Import settings page.
+    // Set up actions for the Events Import settings page
     if ( is_admin() ) {
         add_action( 'admin_menu', 'loop_admin_menu' );
         add_action( 'admin_init', 'import_events_page' );
@@ -22,11 +22,14 @@
     add_action( 'rest_api_init', 'view_active_events_rest' );
     add_action( 'cli_init', 'import_json_cli_register_commands' );
 
-    // Create a shortcode that shows all active events.
+    // Create a shortcode that shows all active events
     add_shortcode( 'view_events', 'display_events_shortcode' );
 
+    // Make sure Metabox is installed before proceeding
+    register_activation_hook( __FILE__, 'metabox_plugin_activate' );
+
     /**
-     * Adjust default mime types to accept uploading JSON-formatted files.
+     * Adjust default mime types to accept uploading JSON-formatted files
      * 
      * @param $wp_get_mime_type array
      * 
@@ -39,7 +42,7 @@
     }
 
     /**
-     * Assign new submenu item in Tools menu.
+     * Assign new submenu item in Tools menu
      *
      */
     function loop_admin_menu() {
@@ -54,7 +57,7 @@
     }
 
     /**
-     * Create options page for importing events.
+     * Create options page for importing events
      * 
      */
     function import_events_page() {
@@ -84,7 +87,7 @@
     }
 
     /**
-     * Create a file upload field for the options page.
+     * Create a file upload field for the options page
      * 
      * @return string
      */
@@ -95,7 +98,7 @@
     }
     
     /**
-     * Default callback for the options page.
+     * Default callback for the options page
      * 
      */
     function import_json_callback() {
@@ -103,7 +106,7 @@
     }
     
     /**
-     * Shows admin notices. Needed to trigger admin notices on the options page.
+     * Shows admin notices. Needed to trigger admin notices on the options page
      * 
      */
     function import_json_show_admin_notices() {
@@ -111,7 +114,7 @@
     }
 
     /**
-     * Renders the HTML form on the options page using the Settings API.
+     * Renders the HTML form on the options page using the Settings API
      * 
      * @return string
      */
@@ -132,7 +135,7 @@
     }
 
     /**
-     * Validate and santiize the uploaded import files.
+     * Validate and santiize the uploaded import files
      * 
      */
     function sanitize_import_file() {
@@ -141,17 +144,16 @@
         require_once ( ABSPATH . '/wp-admin/includes/file.php' );
         WP_Filesystem();
 
-        // Check for upload permissions.
+        // Check for upload permissions
         if ( !current_user_can('upload_files') ) {
             wp_die( __( 'You do not have permission to upload files.' ) );
         }
 
-        // Check if the file was uploaded.
+        // Check if the file was uploaded
         if( !empty( $_FILES["json_import_file"]["tmp_name"] ) )
         {
             $file = wp_handle_upload( $_FILES["json_import_file"], array( 'test_form' => false ) );
 
-            // 
             if( isset($file['error'] ) ) {
                 return add_settings_error(
                     'import_json',
@@ -163,14 +165,14 @@
 
             $file_info = wp_check_filetype( basename( $file['file'] ), array( 'json' => 'application/json' ) );
 
-            // Perform a check for extension and mime type.
+            // Perform a check for extension and mime type
             if( $file_info['ext'] === 'json' && $file_info['type'] == 'application/json' ) {
                 $file_data = $wp_filesystem->get_contents( $file['file'] );
 
                 // Remove the uploaded file
                 wp_delete_file( $file['file'] );
 
-                // Make sure only valid JSON data is uploaded.
+                // Make sure only valid JSON data is uploaded
                 if( ( $events = @json_decode( $file_data ) ) === null ) {
                     add_settings_error(
                         'import_json',
@@ -211,15 +213,15 @@
     }
 
     /**
-     * Handles all JSON-fromatted data and imports it in the database.
+     * Handles all JSON-fromatted data and imports it in the database
      * 
      * @param $events array
      * 
-     * @return string Returns the number of created/updated events.
+     * @return string Returns the number of created/updated events
      */
     function handle_imported_events( $events ) {
         if( $imported_events = import_event_data( $events ) ) {
-            // Send an email with details about the import.
+            // Send an email with details about the import
             email_import_status( $imported_events['created'], $imported_events['updated'] );
 
             return add_settings_error(
@@ -240,7 +242,7 @@
     }
 
     /**
-     * Create a new event post type when an event with the specific ID doesn't exist.
+     * Create a new event post type when an event with the specific ID doesn't exist
      * 
      * @param $data array
      * 
@@ -260,7 +262,7 @@
         );
 
         if( $post_id = wp_insert_post( $new_event ) ) {
-            // Title is not a custom field, we don't need it to pass it to update_event_data().
+            // Title is not a custom field, we don't need to pass it to update_event_data()
             unset( $data->title );
 
             return update_event_data( $data, $post_id );
@@ -270,22 +272,18 @@
     }
 
     function import_event_data( $events ) {
-        // Track the number or created/updated events.
+        // Track the number or created/updated events
         $created_events = $updated_events = 0;
 
-        
-
-        // Pass all events to the importer.
+        // Pass all events to the importer
         foreach( $events as $event ) {
             $event_id = get_event_post_id( $event->id );
 
             if( false !== $event_id ) {
-                // Update event if exists.
                 if( update_event_data( $event, $event_id ) ) {
                     $updated_events++;
                 }
             } else {
-                // Create a new event.
                 if( create_event_data( $event ) ) {
                     $created_events++;
                 }
@@ -293,7 +291,7 @@
 
         }
 
-        // Notify if at least one event was modified.
+        // Notify if at least one event was modified
         if( $created_events || $updated_events ) {
             return array(
                 'created'   => $created_events,
@@ -305,7 +303,7 @@
     }
 
     /**
-     * Update event data for imported events.
+     * Update event data for imported events
      * 
      * @param $data array
      * @param $post_id integer
@@ -318,7 +316,7 @@
         $is_updated = false;
 
         if( isset( $data->title ) ) {
-            // Santiize the post title before updating it.
+            // Santiize the post title before updating it
             $data->title = sanitize_text_field( $data->title );
 
             $post = array(
@@ -367,21 +365,21 @@
     }
 
     /**
-     * Check if a specific Event ID is already imported.
+     * Check if a specific Event ID is already imported
      * 
      * @param $id integer
      * 
-     * @return mixed The Post ID or false if it doesn't exist.
+     * @return mixed The Post ID or false if it doesn't exist
      */
     function get_event_post_id( $id ) {
         global $wpdb;
 
-        // Check for only published or draft events.
+        // Check for only published or draft events
         $sql = $wpdb->prepare( "SELECT {$wpdb->postmeta}.post_id
         FROM {$wpdb->postmeta}
         INNER JOIN {$wpdb->posts} ON {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID
         WHERE {$wpdb->postmeta}.meta_key = 'id'
-        AND {$wpdb->postmeta}.meta_value = '%d'
+        AND {$wpdb->postmeta}.meta_value = %d
         AND ({$wpdb->posts}.post_status = 'publish' OR {$wpdb->posts}.post_status = 'draft')
         LIMIT 1;", (int) $id );
 
@@ -391,7 +389,7 @@
     }
 
     /**
-     * Retrieve a list of all active events.
+     * Retrieve a list of all active events
      * 
      * @return array
      */
@@ -418,9 +416,9 @@
             $events[$meta[$id]['post_id']][$meta[$id]['meta_key']] = $meta[$id]['meta_value'];
         }
 
-        // Sort events based on the closest date.
+        // Sort events based on the closest date
         // I used this method rather than SQL ordering because each timestamp is stored in `meta_value` field in the postmeta table and
-        // a complex query would be needed to sort it there, so I decided to use this instead.
+        // a complex query would be needed to sort it there, so I decided to use this instead
         usort( $events, function( $a, $b ) {
             return ( abs( time() - strtotime( $a['timestamp'] ) ) - ( abs( time() - strtotime( $b['timestamp'] ) ) ) );
         } );
@@ -429,11 +427,12 @@
     }
 
     /**
-     * Shortcode for displaying all active events.
+     * Shortcode for displaying all active events
      * 
      * @return string
      */
     function display_events_shortcode() {
+        $output = '';
         $events = get_active_events();
 
         foreach( $events as $id => $custom_fields ) {
@@ -461,14 +460,33 @@
      * @return boolean
      */
     function email_import_status( $created_events, $updated_events ) {
-        $title = __( 'Events Import Complete' );
+        $title   = __( 'Events Import Complete' );
         $message = __( "Hello!\n\nEvents were successfully imported (%d events created, %d events updated).\n\nKind regards,\nAlex" );
 
         return wp_mail( LOOP_RECIPIENT, $title, sprintf( $message, $created_events, $updated_events ) );
     }
 
     /**
-     * Register a route to view active events through the REST API.
+     * Check for Metabox installation before enabling the plugin
+     * 
+     */
+    function metabox_plugin_activate() {
+        if ( !is_plugin_active( 'meta-box/meta-box.php' ) && current_user_can( 'activate_plugins' ) ) {
+            // Stop the activation and prompt the user to install Metabox
+            wp_die('Loop Demo requires Metabox plugin to work. Please activate it before proceeding.');
+        }
+    }
+
+    /**
+     * Register events CLI command
+     *
+     */
+    function import_json_cli_register_commands() {
+        WP_CLI::add_command( 'events', 'Import_Events_Cli' );
+    }
+
+    /**
+     * Register a route to view active events through the REST API
      * 
      */
     function view_active_events_rest() {
@@ -480,12 +498,12 @@
     }
 
     /**
-     * Retrieve the active events in JSON format for the REST API.
+     * Retrieve the active events in JSON format for the REST API
      * 
      */
     function view_active_events_json() {
         $response = new WP_REST_Response( get_active_events() );
-        $response->set_status(200);
+        $response->set_status( 200 );
 
         return $response;
     }
@@ -497,7 +515,7 @@
     class Import_Events_Cli {
 
         /**
-         * Import events from local files or URLs.
+         * Import events from local files or URLs
          *
          * ## EXAMPLES
          *
@@ -528,24 +546,25 @@
                 if ( 20 != substr( $response->status_code, 0, 2 ) ) {
                     WP_CLI::error( 'Could not load data.' );
                 }
-                 // Make sure only valid JSON data is uploaded.
-                 if( ( $events = @json_decode( $response->body ) ) === null ) {
+
+                // Make sure only valid JSON data is uploaded
+                if( null === ( $events = @json_decode( $response->body ) ) ) {
                     return WP_CLI::error( 'The JSON file is malformatted.' );
                 }
             } else {
                 $file = WP_CLI\Utils\normalize_path( ABSPATH . $assoc_args['file'] );
 
                 if( !file_exists( $file ) ) {
-                    return WP_CLI::error( $file );
+                    return WP_CLI::error( "The requested file doesn't exist." );
                 }
     
                 $file_info = wp_check_filetype( WP_CLI\Utils\basename( $file ), array( 'json' => 'application/json' ) );
     
-                // Check for valid extension and mime type.
+                // Check for valid extension and mime type
                 if( $file_info['ext'] === 'json' && $file_info['type'] == 'application/json' ) {
                     $file_data = $wp_filesystem->get_contents( $file );
     
-                    // Make sure only valid JSON data is uploaded.
+                    // Make sure only valid JSON data is uploaded
                     if( ( $events = @json_decode( $file_data ) ) === null ) {
                         return WP_CLI::error( 'The uploaded JSON file is malformatted.' );
                     }
@@ -566,14 +585,6 @@
             return WP_CLI::warning( 'No events were created or updated (data is the same).' );
         }
     
-    }
-    
-    /**
-     * Register events CLI command
-     *
-     */
-    function import_json_cli_register_commands() {
-        WP_CLI::add_command( 'events', 'Import_Events_Cli' );
     }
 
     /**
