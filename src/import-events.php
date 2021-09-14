@@ -8,6 +8,11 @@
     License: GPL2
     */
 
+    // Exit if accessed directly
+    if ( ! defined( 'ABSPATH' ) ) {
+        exit;
+    }
+
     define( 'LOOP_RECIPIENT', 'logging@agentur-loop.com' );
 
     // Set up actions for the Events Import settings page
@@ -150,11 +155,11 @@
         }
 
         // Check if the file was uploaded
-        if( !empty( $_FILES["json_import_file"]["tmp_name"] ) )
+        if ( !empty( $_FILES["json_import_file"]["tmp_name"] ) )
         {
             $file = wp_handle_upload( $_FILES["json_import_file"], array( 'test_form' => false ) );
 
-            if( isset($file['error'] ) ) {
+            if ( isset($file['error'] ) ) {
                 return add_settings_error(
                     'import_json',
                     esc_attr( 'json_import_file' ),
@@ -166,14 +171,14 @@
             $file_info = wp_check_filetype( basename( $file['file'] ), array( 'json' => 'application/json' ) );
 
             // Perform a check for extension and mime type
-            if( $file_info['ext'] === 'json' && $file_info['type'] == 'application/json' ) {
+            if ( $file_info['ext'] === 'json' && $file_info['type'] == 'application/json' ) {
                 $file_data = $wp_filesystem->get_contents( $file['file'] );
 
                 // Remove the uploaded file
                 wp_delete_file( $file['file'] );
 
                 // Make sure only valid JSON data is uploaded
-                if( ( $events = @json_decode( $file_data ) ) === null ) {
+                if ( ( $events = @json_decode( $file_data ) ) === null ) {
                     add_settings_error(
                         'import_json',
                         esc_attr( 'json_import_file' ),
@@ -220,7 +225,7 @@
      * @return string Returns the number of created/updated events
      */
     function handle_imported_events( $events ) {
-        if( $imported_events = import_event_data( $events ) ) {
+        if ( $imported_events = import_event_data( $events ) ) {
             // Send an email with details about the import
             email_import_status( $imported_events['created'], $imported_events['updated'] );
 
@@ -261,7 +266,7 @@
             'post_category' => array(0),
         );
 
-        if( $post_id = wp_insert_post( $new_event ) ) {
+        if ( $post_id = wp_insert_post( $new_event ) ) {
             // Title is not a custom field, we don't need to pass it to update_event_data()
             unset( $data->title );
 
@@ -279,12 +284,12 @@
         foreach( $events as $event ) {
             $event_id = get_event_post_id( $event->id );
 
-            if( false !== $event_id ) {
-                if( update_event_data( $event, $event_id ) ) {
+            if ( false !== $event_id ) {
+                if ( update_event_data( $event, $event_id ) ) {
                     $updated_events++;
                 }
             } else {
-                if( create_event_data( $event ) ) {
+                if ( create_event_data( $event ) ) {
                     $created_events++;
                 }
             }
@@ -292,7 +297,7 @@
         }
 
         // Notify if at least one event was modified
-        if( $created_events || $updated_events ) {
+        if ( $created_events || $updated_events ) {
             return array(
                 'created'   => $created_events,
                 'updated'   => $updated_events
@@ -315,7 +320,7 @@
 
         $is_updated = false;
 
-        if( isset( $data->title ) ) {
+        if ( isset( $data->title ) ) {
             // Santiize the post title before updating it
             $data->title = sanitize_text_field( $data->title );
 
@@ -331,7 +336,7 @@
 
             $result = $wpdb->get_results( $sql, ARRAY_A );
 
-            if( isset( $result[0]['post_title'] ) && 0 !== strcmp( $result[0]['post_title'],  $data->title ) && wp_update_post( $post ) ) {
+            if ( isset( $result[0]['post_title'] ) && 0 !== strcmp( $result[0]['post_title'],  $data->title ) && wp_update_post( $post ) ) {
                 $is_updated = true;
             }
 
@@ -353,7 +358,7 @@
             $meta_value = $sanitized_meta( $meta_value );
 
             // Make sure only needed changes are made
-            if( 0 !== strcmp( rwmb_get_value( $meta_key, '', $post_id ), $meta_value ) ) {
+            if ( 0 !== strcmp( rwmb_get_value( $meta_key, '', $post_id ), $meta_value ) ) {
                 rwmb_set_meta( $post_id, $meta_key, $meta_value );
 
                 // rwmb_set_meta doesn't return true/false on succesful update, so we trigger it here
@@ -409,7 +414,7 @@
 
         // Fetch and assign each custom field to the $events array
         foreach( $meta as $id => $meta_value ) {
-            if( !isset( $events[$meta[$id]['title']] ) ) {
+            if ( !isset( $events[$meta[$id]['title']] ) ) {
                 $events[$meta[$id]['post_id']]['title'] = $meta[$id]['post_title'];
             }
 
@@ -536,11 +541,11 @@
 
             $assoc_args = wp_parse_args( $assoc_args, $defaults );
 
-            if( false === $assoc_args['file'] ) {
+            if ( false === $assoc_args['file'] ) {
                 return WP_CLI::error( 'Please select a valid JSON file.' );
             }
 
-            if( filter_var( $assoc_args['file'], FILTER_VALIDATE_URL )  ) {
+            if ( filter_var( $assoc_args['file'], FILTER_VALIDATE_URL )  ) {
                 $response = WP_CLI\Utils\http_request( 'GET', $assoc_args['file'] );
 
                 if ( 20 != substr( $response->status_code, 0, 2 ) ) {
@@ -548,24 +553,24 @@
                 }
 
                 // Make sure only valid JSON data is uploaded
-                if( null === ( $events = @json_decode( $response->body ) ) ) {
+                if ( null === ( $events = @json_decode( $response->body ) ) ) {
                     return WP_CLI::error( 'The JSON file is malformatted.' );
                 }
             } else {
                 $file = WP_CLI\Utils\normalize_path( ABSPATH . $assoc_args['file'] );
 
-                if( !file_exists( $file ) ) {
+                if ( !file_exists( $file ) ) {
                     return WP_CLI::error( "The requested file doesn't exist." );
                 }
     
                 $file_info = wp_check_filetype( WP_CLI\Utils\basename( $file ), array( 'json' => 'application/json' ) );
     
                 // Check for valid extension and mime type
-                if( $file_info['ext'] === 'json' && $file_info['type'] == 'application/json' ) {
+                if ( $file_info['ext'] === 'json' && $file_info['type'] == 'application/json' ) {
                     $file_data = $wp_filesystem->get_contents( $file );
     
                     // Make sure only valid JSON data is uploaded
-                    if( ( $events = @json_decode( $file_data ) ) === null ) {
+                    if ( ( $events = @json_decode( $file_data ) ) === null ) {
                         return WP_CLI::error( 'The uploaded JSON file is malformatted.' );
                     }
                 } else {
@@ -575,7 +580,7 @@
 
             // Handle the imported data
             if ( $imported_events = import_event_data( $events ) ) {
-                if( false === $assoc_args['skip-email'] ) {
+                if ( false === $assoc_args['skip-email'] ) {
                     email_import_status( $imported_events['created'], $imported_events['updated'] );
                 }
 
@@ -594,28 +599,28 @@
      */
     function time2relative( $ts )
     {
-        if( !ctype_digit( $ts ) ) {
+        if ( !ctype_digit( $ts ) ) {
             $ts = strtotime( $ts );
         }
             
         $diff = time() - $ts;
-        if( $diff == 0 )
+        if ( $diff == 0 )
             return __( 'now' );
         elseif( $diff > 0 )
         {
             $day_diff = floor( $diff / 86400 );
-            if( $day_diff == 0 )
+            if ( $day_diff == 0 )
             {
-                if( $diff < 60 ) return __( 'just now' );
-                if( $diff < 120 ) return __( '1 minute ago' );
-                if( $diff < 3600 ) return floor($diff / 60) . __( ' minutes ago' );
-                if( $diff < 7200 ) return __( '1 hour ago' );
-                if( $diff < 86400 ) return floor($diff / 3600) . __( ' hours ago' );
+                if ( $diff < 60 ) return __( 'just now' );
+                if ( $diff < 120 ) return __( '1 minute ago' );
+                if ( $diff < 3600 ) return floor($diff / 60) . __( ' minutes ago' );
+                if ( $diff < 7200 ) return __( '1 hour ago' );
+                if ( $diff < 86400 ) return floor($diff / 3600) . __( ' hours ago' );
             }
-            if( $day_diff == 1 ) return __( 'Yesterday' );
-            if( $day_diff < 7 ) return $day_diff . __( ' days ago' );
-            if( $day_diff < 31 ) return ceil( $day_diff / 7 ) . __( ' weeks ago' );
-            if( $day_diff < 60 ) return __( 'last month' );
+            if ( $day_diff == 1 ) return __( 'Yesterday' );
+            if ( $day_diff < 7 ) return $day_diff . __( ' days ago' );
+            if ( $day_diff < 31 ) return ceil( $day_diff / 7 ) . __( ' weeks ago' );
+            if ( $day_diff < 60 ) return __( 'last month' );
             return date( 'F Y', $ts );
         }
         else
@@ -625,17 +630,17 @@
 
             if ( 0 == $day_diff )
             {
-                if( $diff < 120 ) return __( 'in a minute' );
-                if( $diff < 3600 ) return __( 'in ' ) . floor( $diff / 60 ) . __( ' minutes' );
-                if( $diff < 7200 ) return __( 'in an hour' );
-                if( $diff < 86400 ) return __( 'in ' ) . floor( $diff / 3600 ) . __( ' hours' );
+                if ( $diff < 120 ) return __( 'in a minute' );
+                if ( $diff < 3600 ) return __( 'in ' ) . floor( $diff / 60 ) . __( ' minutes' );
+                if ( $diff < 7200 ) return __( 'in an hour' );
+                if ( $diff < 86400 ) return __( 'in ' ) . floor( $diff / 3600 ) . __( ' hours' );
             }
 
             if ( $day_diff == 1 ) return __( 'Tomorrow' );
             if ( $day_diff < 4 ) return date('l', $ts);
             if ( $day_diff < 7 + ( 7 - date('w') ) ) return __( 'next week' );
             if ( ceil( $day_diff / 7 ) < 4 ) return __( 'in ' ) . ceil( $day_diff / 7 ) . __( ' weeks' );
-            if( date( 'n', $ts ) == date( 'n' ) + 1 ) return __( 'next month' );
+            if ( date( 'n', $ts ) == date( 'n' ) + 1 ) return __( 'next month' );
 
             return date( 'F Y', $ts );
         }
