@@ -41,7 +41,7 @@ wp events import /wp-content/uploads/data.json
 
 wp events import https://alex.net.co/data.json
 
-wp events import —file=/wp-content/uploads/data.json
+wp events import --file=/wp-content/uploads/data.json
 
-wp events import —file=https://alex.net.co/data.json —skip-email
+wp events import --file=https://alex.net.co/data.json --skip-email
 ```
