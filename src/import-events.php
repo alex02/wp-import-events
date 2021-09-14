@@ -473,7 +473,7 @@
     function metabox_plugin_activate() {
         if ( !is_plugin_active( 'meta-box/meta-box.php' ) && current_user_can( 'activate_plugins' ) ) {
             // Stop the activation and prompt the user to install Metabox
-            wp_die('Loop Demo requires Metabox plugin to work. Please activate it before proceeding.');
+            wp_die( __( 'Loop Demo requires Metabox plugin to work. Please activate it before proceeding.' ) );
         }
     }
 
