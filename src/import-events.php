@@ -441,7 +441,15 @@
         $events = get_active_events();
 
         foreach( $events as $id => $custom_fields ) {
-            $date = time2relative( $custom_fields['timestamp'] );
+            $timestamp     = strtotime( $custom_fields['timestamp'] );
+            $relative_time = human_time_diff( $timestamp );
+
+            if( time() > $timestamp ) {
+                $relative_time .= ' ' . __( 'ago' );
+            } else {
+                $relative_time = __( 'in' ) . ' ' . $date;
+            }
+
             $tags = implode(', ', json_decode( $custom_fields['tags'] ) );
 
             $output .= <<<OUTPUT
@@ -450,7 +458,7 @@
             <p><strong>About:</strong> {$custom_fields['about']}</p>
             <p><strong>Organizer:</strong> {$custom_fields['organizer']}</p>
             <p><strong>Email:</strong> {$custom_fields['email']}</p>
-            <p><strong>Date:</strong> {$date} ({$custom_fields['timestamp']})</p>
+            <p><strong>Date:</strong> {$relative_time} ({$custom_fields['timestamp']})</p>
             <p><strong>Lat/Long:</strong> {$custom_fields['latitude']}, {$custom_fields['longitude']}</p>
             <p><strong>Tags:</strong> {$tags}</p>
             OUTPUT;
@@ -590,58 +598,4 @@
             return WP_CLI::warning( 'No events were created or updated (data is the same).' );
         }
     
-    }
-
-    /**
-     * Converts timestamp to relative time
-     * 
-     * @see https://stackoverflow.com/a/2690541
-     */
-    function time2relative( $ts )
-    {
-        if ( !ctype_digit( $ts ) ) {
-            $ts = strtotime( $ts );
-        }
-            
-        $diff = time() - $ts;
-        if ( $diff == 0 )
-            return __( 'now' );
-        elseif( $diff > 0 )
-        {
-            $day_diff = floor( $diff / 86400 );
-            if ( $day_diff == 0 )
-            {
-                if ( $diff < 60 ) return __( 'just now' );
-                if ( $diff < 120 ) return __( '1 minute ago' );
-                if ( $diff < 3600 ) return floor($diff / 60) . __( ' minutes ago' );
-                if ( $diff < 7200 ) return __( '1 hour ago' );
-                if ( $diff < 86400 ) return floor($diff / 3600) . __( ' hours ago' );
-            }
-            if ( $day_diff == 1 ) return __( 'Yesterday' );
-            if ( $day_diff < 7 ) return $day_diff . __( ' days ago' );
-            if ( $day_diff < 31 ) return ceil( $day_diff / 7 ) . __( ' weeks ago' );
-            if ( $day_diff < 60 ) return __( 'last month' );
-            return date( 'F Y', $ts );
-        }
-        else
-        {
-            $diff = abs( $diff );
-            $day_diff = floor( $diff / 86400 );
-
-            if ( 0 == $day_diff )
-            {
-                if ( $diff < 120 ) return __( 'in a minute' );
-                if ( $diff < 3600 ) return __( 'in ' ) . floor( $diff / 60 ) . __( ' minutes' );
-                if ( $diff < 7200 ) return __( 'in an hour' );
-                if ( $diff < 86400 ) return __( 'in ' ) . floor( $diff / 3600 ) . __( ' hours' );
-            }
-
-            if ( $day_diff == 1 ) return __( 'Tomorrow' );
-            if ( $day_diff < 4 ) return date('l', $ts);
-            if ( $day_diff < 7 + ( 7 - date('w') ) ) return __( 'next week' );
-            if ( ceil( $day_diff / 7 ) < 4 ) return __( 'in ' ) . ceil( $day_diff / 7 ) . __( ' weeks' );
-            if ( date( 'n', $ts ) == date( 'n' ) + 1 ) return __( 'next month' );
-
-            return date( 'F Y', $ts );
-        }
     }
