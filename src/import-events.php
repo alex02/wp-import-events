@@ -447,7 +447,7 @@
             if( time() > $timestamp ) {
                 $relative_time .= ' ' . __( 'ago' );
             } else {
-                $relative_time = __( 'in' ) . ' ' . $date;
+                $relative_time = __( 'in' ) . ' ' . $relative_time;
             }
 
             $tags = implode(', ', json_decode( $custom_fields['tags'] ) );
